@@ -4,10 +4,8 @@ import com.jjery.login.user.dto.UserRegistrationResponseDTO;
 import com.jjery.login.user.entity.User;
 import com.jjery.login.user.repository.UserRepository;
 import com.jjery.login.user.util.JwtUtil;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,11 +29,7 @@ public class UserService implements UserDetailsService {
   // DTO 생성해서 코드 수정
   public UserRegistrationResponseDTO registerUser(
       String loginId, String password, String nickname) {
-    // 중복된 loginId가 있는지 확인
-    if (userRepository.findByLoginId(loginId).isPresent()) {
-      log.warn("회원가입 실패: 중복된 Login ID - {}", loginId);
-      throw new RuntimeException("Login ID already exists");
-    }
+
     // 새로운 사용자 생성
     User user = new User();
     user.setLoginId(loginId);
@@ -51,6 +45,10 @@ public class UserService implements UserDetailsService {
     // 응답 DTO 생성 및 반환
     return new UserRegistrationResponseDTO(
         savedUser.getLoginId(), savedUser.getNickname(), "회원가입이 성공적으로 완료되었습니다.");
+  }
+
+  public boolean isLoginIdAvailable(String loginId) {
+    return !userRepository.findByLoginId(loginId).isPresent();
   }
 
   // 로그인 로직
@@ -90,5 +88,13 @@ public class UserService implements UserDetailsService {
 
     return new org.springframework.security.core.userdetails.User(
         user.getLoginId(), user.getLoginPw(), authorities);
+  }
+
+  public String findNicknameByLoginId(String loginId) {
+    User user =
+        userRepository
+            .findByLoginId(loginId)
+            .orElseThrow(() -> new RuntimeException("User not found with login ID: " + loginId));
+    return user.getNickname();
   }
 }
